@@ -11,24 +11,40 @@ class Game {
 
     this.currPlayer = 1; // active player: 1 or 2
     this.board = []; // array of rows, each row is array of cells  (board[y][x])
-  
-    this.makeBoard();
-    this.makeHtmlBoard();
+    this.status = "paused";
+
+    this.makeHtmlButton();
   }
   /** makeBoard: create in-JS board structure:
    *   board = array of rows, each row is array of cells  (board[y][x])
    */
 
   makeBoard() {
+    this.board = [];
     for (let y = 0; y < this.HEIGHT; y++) {
       this.board.push(Array.from({ length: this.WIDTH }));
     }
+  }
+
+  makeHtmlButton() {
+    const gameDiv = document.getElementById('game');
+    const btn = document.createElement('button');
+    btn.id = 'button';
+    btn.textContent = 'Start';
+    btn.addEventListener('click', this.handleClick.bind(this));
+    gameDiv.prepend(btn);
+  }
+
+  updateHtmlButton(text) {
+    const btn = document.getElementById('button');
+    btn.textContent = text;
   }
 
   /** makeHtmlBoard: make HTML table and row of column tops. */
 
   makeHtmlBoard() {
     const board = document.getElementById('board');
+    board.innerHTML = '';
 
     // make column tops (clickable area for adding a piece to that column)
     const top = document.createElement('tr');
@@ -83,37 +99,49 @@ class Game {
   /** endGame: announce game end */
 
   endGame(msg) {
+    this.status = 'gameover';
+    this.updateHtmlButton('Restart');
     alert(msg);
   }
 
   /** handleClick: handle click of column top to play piece */
 
   handleClick(evt) {
-    // get x from ID of clicked cell
-    const x = +evt.target.id;
+    if(this.status === 'playing' && evt.target.id !== 'button') {
 
-    // get next spot in column (if none, ignore click)
-    const y = this.findSpotForCol(x);
-    if (y === null) {
-      return;
-    }
+      // get x from ID of clicked cell
+      const x = +evt.target.id;
 
-    // place piece in board and add to HTML table
-    this.board[y][x] = this.currPlayer;
-    this.placeInTable(y, x);
-    
-    // check for win
-    if (this.checkForWin()) {
-      return this.endGame(`Player ${this.currPlayer} won!`);
-    }
-    
-    // check for tie
-    if (this.board.every(row => row.every(cell => cell))) {
-      return this.endGame('Tie!');
-    }
+      // get next spot in column (if none, ignore click)
+      const y = this.findSpotForCol(x);
+      if (y === null) {
+        return;
+      }
+
+      // place piece in board and add to HTML table
+      this.board[y][x] = this.currPlayer;
+      this.placeInTable(y, x);
       
-    // switch players
-    this.currPlayer = this.currPlayer === 1 ? 2 : 1;
+      // check for win
+      if (this.checkForWin()) {
+        return this.endGame(`Player ${this.currPlayer} won!`);
+      }
+      
+      // check for tie
+      if (this.board.every(row => row.every(cell => cell))) {
+        return this.endGame('Tie!');
+      }
+        
+      // switch players
+      this.currPlayer = this.currPlayer === 1 ? 2 : 1;
+    } else {
+      if(evt.target.id === 'button' && this.status !== 'playing') {
+        this.makeBoard();
+        this.makeHtmlBoard();
+        this.status = 'playing';
+        return;
+      }  
+    }
   }
 
   /** checkForWin: check board cell-by-cell for "does a win start here?" */
